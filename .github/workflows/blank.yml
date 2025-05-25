@@ -1,0 +1,13 @@
+name: Test Email Step
+
+on:
+  push:
+    branches:
+      - main  # or your default branch name
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 24f3004998@ds.study.iitm.ac.in
+        run: echo "Hello, world!"
