@@ -4,9 +4,6 @@ from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
-# Load model
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
 # Load Discourse posts
 with open("data/tds_topics.json", encoding="utf-8") as f:
     discourse_posts = json.load(f)
@@ -52,11 +49,13 @@ for p in tds_links:
 corpus_embeddings = model.encode(corpus, convert_to_tensor=True)
 
 # Create FAISS vector store
-embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+embedding_model = HuggingFaceEmbeddings(model_name="intfloat/e5-small")
 search_engine = FAISS.from_texts(corpus, embedding_model)
 
 # Search function
 def find_answer(question: str):
+    # Load model
+    model = SentenceTransformer("all-MiniLM-L6-v2")
     hits = search_engine.similarity_search(question, k=3)
 
     if not hits:
