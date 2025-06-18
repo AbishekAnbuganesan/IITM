@@ -7,18 +7,21 @@ import os
 
 app = FastAPI()
 
+# Define the request model
 class Query(BaseModel):
     question: str
-    image: str = None
+    image: str = None  # base64-encoded string (optional)
 
+# Enable CORS to allow external requests (e.g., from Swagger UI or a frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Use specific domains in production
+    allow_origins=["*"],  # In production, restrict to allowed domains
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods including OPTIONS
+    allow_methods=["*"],  # Includes GET, POST, OPTIONS, etc.
     allow_headers=["*"],
 )
 
+# Root POST endpoint to answer questions
 @app.post("/")
 async def answer_question(query: Query):
     question = query.question
@@ -29,8 +32,8 @@ async def answer_question(query: Query):
     answer, links = find_answer(question)
     return {"answer": answer, "links": links}
 
-# ── ADD THIS ──────────────────────────────────────────────
+# Local dev only: Run app with uvicorn directly
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 8000))  # default to 8000 for local
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)s
