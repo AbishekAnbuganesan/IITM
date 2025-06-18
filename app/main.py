@@ -10,6 +10,14 @@ class Query(BaseModel):
     question: str
     image: str = None
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Use specific domains in production
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods including OPTIONS
+    allow_headers=["*"],
+)
+
 @app.post("/")
 async def answer_question(query: Query):
     question = query.question
