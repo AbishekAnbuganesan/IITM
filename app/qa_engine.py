@@ -4,73 +4,73 @@ from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
-# Load Discourse posts
+# 1. Load/initialize the embedding model once
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# 2. Load Discourse posts
 with open("data/tds_topics.json", encoding="utf-8") as f:
     discourse_posts = json.load(f)
 
-# Load TDS course content (links only)
+# 3. Load TDS course content (links only)
 with open("data/tds_course_content.json", encoding="utf-8") as f:
     tds_links = json.load(f)
 
-# Build a unified corpus
+# 4. Build a unified corpus & metadata
 corpus = []
 sources = []
 
-# 1. Add Discourse posts
 for p in discourse_posts:
-    title = p.get("title", "")
+    title   = p.get("title", "")
     content = p.get("content", "")
-    link = p.get("link", "")
-
-    combined_text = title + " " + content
-    corpus.append(combined_text)
+    link    = p.get("link", "")
+    corpus.append(f"{title} {content}")
     sources.append({
-        "type": "discourse",
-        "link": link,
-        "title": title,
-        "content": content
+        "type":    "discourse",
+        "title":   title,
+        "content": content,
+        "link":    link
     })
 
-# 2. Add TDS course page links
 for p in tds_links:
     title = p.get("title", "")
-    href = p.get("href", "")
-
-    text = title + " " + href
-    corpus.append(text)
+    href  = p.get("href", "")
+    corpus.append(f"{title} {href}")
     sources.append({
-        "type": "tds",
-        "title": title,
-        "link": href,
-        "content": ""  # Placeholder for future scraping
+        "type":    "tds",
+        "title":   title,
+        "content": "",     # you can fill this later
+        "link":    href
     })
 
-# Generate embeddings
+# 5. Generate embeddings for the whole corpus
 corpus_embeddings = model.encode(corpus, convert_to_tensor=True)
 
-# Create FAISS vector store
-embedding_model = HuggingFaceEmbeddings(model_name="intfloat/e5-small")
-search_engine = FAISS.from_texts(corpus, embedding_model)
+# 6. Build FAISS vector store (lighter HuggingFaceEmbeddings)
+hf_embeddings = HuggingFaceEmbeddings(model_name="intfloat/e5-small")
+search_engine  = FAISS.from_texts(corpus, hf_embeddings)
 
-# Search function
+# 7. Exposed search function
 def find_answer(question: str):
-    # Load model
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+    # find top-3 similar documents
     hits = search_engine.similarity_search(question, k=3)
 
     if not hits:
         return "Sorry, I couldn't find any relevant answer.", []
 
-    match_text = hits[0].page_content
+    # best match
+    match_text  = hits[0].page_content
     match_index = corpus.index(match_text)
-    match_source = sources[match_index]
+    src         = sources[match_index]
 
-    if match_source["type"] == "discourse":
-        # Safely extract and clean HTML content
-        answer = BeautifulSoup(match_source.get("content", ""), "html.parser").get_text()
+    if src["type"] == "discourse":
+        answer = BeautifulSoup(src["content"], "html.parser").get_text()
     else:
-        answer = f"This seems to be from the course page: {match_source.get('title', '')}"
+        answer = f"This comes from the course content page: {src['title']}"
 
-    links = [sources[corpus.index(hit.page_content)].get("link", "") for hit in hits]
+    # collect links to top-3
+    links = []
+    for hit in hits:
+        idx = corpus.index(hit.page_content)
+        links.append(sources[idx]["link"])
 
     return answer, links
