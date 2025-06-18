@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+requests
+beautifulsoup4
+openai
+pillow
+pytesseract
+python-multipart
+python-dotenv
+sentence-transformers
