@@ -8,3 +8,5 @@ pytesseract
 python-multipart
 python-dotenv
 sentence-transformers
+langchain-community
+faiss-cpu
