@@ -38,39 +38,43 @@ for p in tds_links:
     sources.append({
         "type":    "tds",
         "title":   title,
-        "content": "",     # you can fill this later
+        "content": "",     # optional
         "link":    href
     })
 
 # 5. Generate embeddings for the whole corpus
-corpus_embeddings = model.encode(corpus, convert_to_tensor=True)
-
-# 6. Build FAISS vector store (lighter HuggingFaceEmbeddings)
+# (Not needed here since FAISS does it internally via HuggingFaceEmbeddings)
 hf_embeddings = HuggingFaceEmbeddings(model_name="intfloat/e5-small")
-search_engine  = FAISS.from_texts(corpus, hf_embeddings)
+
+# 6. Build FAISS vector store
+search_engine = FAISS.from_texts(corpus, hf_embeddings)
 
 # 7. Exposed search function
 def find_answer(question: str):
-    # find top-3 similar documents
+    # Top 3 matching docs
     hits = search_engine.similarity_search(question, k=3)
 
     if not hits:
         return "Sorry, I couldn't find any relevant answer.", []
 
-    # best match
+    # Get best match
     match_text  = hits[0].page_content
     match_index = corpus.index(match_text)
     src         = sources[match_index]
 
+    # Prepare answer text
     if src["type"] == "discourse":
-        answer = BeautifulSoup(src["content"], "html.parser").get_text()
+        answer = BeautifulSoup(src["content"], "html.parser").get_text().strip()
     else:
         answer = f"This comes from the course content page: {src['title']}"
 
-    # collect links to top-3
+    # Prepare links with proper schema
     links = []
     for hit in hits:
         idx = corpus.index(hit.page_content)
-        links.append(sources[idx]["link"])
+        links.append({
+            "url": sources[idx]["link"],
+            "text": sources[idx]["title"]
+        })
 
     return answer, links
