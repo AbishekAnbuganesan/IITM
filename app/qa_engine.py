@@ -5,7 +5,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # 1. Load/initialize the embedding model once
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = SentenceTransformer("intfloat/e5-small")
 
 # 2. Load Discourse posts
 with open("data/tds_topics.json", encoding="utf-8") as f:
