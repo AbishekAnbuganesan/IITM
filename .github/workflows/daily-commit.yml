@@ -1,0 +1,23 @@
+name: Daily Commit
+
+on:
+  schedule:
+    # Runs every day at 06:30 UTC (set any fixed hour/minute)
+    - cron: '30 6 * * *'
+  workflow_dispatch:  # allows manual trigger
+
+jobs:
+  daily-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make daily update (24f3004998@ds.study.iitm.ac.in)
+        run: |
+          echo "Daily commit on $(date)" >> daily_log.txt
+          git config user.name "DevSync Bot"
+          git config user.email "24f3004998@ds.study.iitm.ac.in"
+          git add daily_log.txt
+          git commit -m "Automated daily commit on $(date)"
+          git push
